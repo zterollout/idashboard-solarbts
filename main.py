@@ -1016,8 +1016,24 @@ def api_installation(filters: str = Query(default="{}")):
 
     # Rollout target
     rollout_target = {}
+    rollout_target_matrix = {}   # { month: { region: count } }
+    rollout_months_order  = []
+    rollout_regions_order = []
     if "Rollout Target" in df.columns:
         rollout_target = df["Rollout Target"].dropna().value_counts().to_dict()
+        if "Region" in df.columns:
+            MONTH_ORDER = ["Jan","Feb","Mar","Apr","May","Jun",
+                           "Jul","Aug","Sep","Oct","Nov","Dec"]
+            _rt = df[df["Rollout Target"].notna() & df["Region"].notna()].copy()
+            _rt["_month"] = _rt["Rollout Target"].astype(str).str.strip()
+            _rt["_region"] = _rt["Region"].astype(str).str.strip()
+            for m in MONTH_ORDER:
+                sub_m = _rt[_rt["_month"] == m]
+                if sub_m.empty:
+                    continue
+                rollout_months_order.append(m)
+                rollout_target_matrix[m] = sub_m.groupby("_region").size().to_dict()
+            rollout_regions_order = sorted(_rt["_region"].unique().tolist())
 
     # ── On Service Burndown (full, for Installation tab) ──────────────
     def norm_wk(s):
@@ -1080,6 +1096,9 @@ def api_installation(filters: str = Query(default="{}")):
         "weekly_install_plan":   weekly_install_plan,
         "weekly_install_actual": weekly_install_actual,
         "rollout_target":        rollout_target,
+        "rollout_target_matrix": rollout_target_matrix,
+        "rollout_months_order":  rollout_months_order,
+        "rollout_regions_order": rollout_regions_order,
         "os_burndown":           os_burndown,
     }
 

@@ -2009,8 +2009,14 @@ tbody td:first-child { font-weight: 700; color: var(--primary); }
         <div class="chart-wrap" style="height:280px;"><canvas id="chart-milestone-bar"></canvas></div>
       </div>
       <div class="card">
-        <div class="card-header"><span class="card-title">📋 Rollout Target Breakdown</span></div>
+        <div class="card-header"><span class="card-title">📋 Rollout Target Breakdown by Month &amp; Region</span></div>
         <div class="chart-wrap" style="height:280px;"><canvas id="chart-rollout"></canvas></div>
+        <div style="overflow-x:auto;padding:0 16px 16px">
+          <table id="tbl-rollout-target" style="width:100%;border-collapse:collapse;font-size:12px;margin-top:8px">
+            <thead id="tbl-rollout-head"></thead>
+            <tbody id="tbl-rollout-body"></tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
@@ -4680,10 +4686,64 @@ async function loadInstallation(qs) {
     { label: 'Pending', data: instR.milestone_stats.map(m => (m.in_progress||0) + (m.pending||0)),  backgroundColor: '#cbd5e1',      borderRadius: 3 },
   ], { xScale: { stacked: true }, yScale: { stacked: true } });
 
-  // Rollout Target
+  // Rollout Target — stacked bar (month × region)
   destroyChart('chart-rollout');
-  const rt = instR.rollout_target||{};
-  makeDoughnut('chart-rollout', Object.keys(rt), Object.values(rt));
+  const rtMonths  = instR.rollout_months_order  || [];
+  const rtRegions = instR.rollout_regions_order || [];
+  const rtMatrix  = instR.rollout_target_matrix || {};
+
+  const REGION_COLORS = [
+    '#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6',
+    '#06b6d4','#ec4899','#84cc16','#f97316','#14b8a6'
+  ];
+
+  if (rtMonths.length && rtRegions.length) {
+    const rtDatasets = rtRegions.map((reg, i) => ({
+      label: reg,
+      data: rtMonths.map(m => (rtMatrix[m] || {})[reg] || 0),
+      backgroundColor: REGION_COLORS[i % REGION_COLORS.length],
+      borderRadius: 0,
+    }));
+    makeBar('chart-rollout', rtMonths, rtDatasets, {
+      plugins: { legend: { display: true, position: 'bottom', labels: { color:'#94a3b8', font:{size:11}, boxWidth:12, padding:10 } } },
+      xScale: { stacked: true },
+      yScale: { stacked: true },
+    });
+
+    // ── ตาราง ──
+    const thead = document.getElementById('tbl-rollout-head');
+    const tbody = document.getElementById('tbl-rollout-body');
+    const thStyle = 'background:rgba(8,145,178,.25);color:#7dd3fc;font-size:11px;padding:6px 10px;text-align:center;border:1px solid rgba(255,255,255,.08);white-space:nowrap';
+    const tdStyle = 'padding:5px 10px;text-align:center;border:1px solid rgba(255,255,255,.06);font-size:12px;color:#e2e8f0';
+    const tdReg   = 'padding:5px 10px;text-align:left;border:1px solid rgba(255,255,255,.06);font-size:12px;color:#7dd3fc;font-weight:600;white-space:nowrap';
+    const tdTotal = 'padding:5px 10px;text-align:center;border:1px solid rgba(255,255,255,.06);font-size:12px;color:#f1f5f9;font-weight:700';
+
+    thead.innerHTML = `<tr>
+      <th style="${thStyle};text-align:left">Region</th>
+      ${rtMonths.map(m=>`<th style="${thStyle}">${m}</th>`).join('')}
+      <th style="${thStyle}">Total</th>
+    </tr>`;
+
+    const grandTotal = new Array(rtMonths.length).fill(0);
+    tbody.innerHTML = rtRegions.map((reg, i) => {
+      const vals = rtMonths.map(m => (rtMatrix[m]||{})[reg] || 0);
+      vals.forEach((v,j) => grandTotal[j] += v);
+      const rowTotal = vals.reduce((a,b)=>a+b,0);
+      return `<tr>
+        <td style="${tdReg}"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${REGION_COLORS[i%REGION_COLORS.length]};margin-right:6px;vertical-align:middle"></span>${reg}</td>
+        ${vals.map(v=>`<td style="${tdStyle}">${v||'—'}</td>`).join('')}
+        <td style="${tdTotal}">${rowTotal}</td>
+      </tr>`;
+    }).join('') + `<tr style="background:rgba(255,255,255,.05)">
+      <td style="${tdReg};color:#f1f5f9">Total</td>
+      ${grandTotal.map(v=>`<td style="${tdTotal}">${v}</td>`).join('')}
+      <td style="${tdTotal}">${grandTotal.reduce((a,b)=>a+b,0)}</td>
+    </tr>`;
+  } else {
+    // fallback doughnut ถ้าไม่มี matrix
+    const rt = instR.rollout_target || {};
+    makeDoughnut('chart-rollout', Object.keys(rt), Object.values(rt));
+  }
 
   // On Service Burndown (Installation tab)
   if (instR.os_burndown) {
