@@ -1799,8 +1799,8 @@ tbody td:first-child { font-weight: 700; color: var(--primary); }
         <div class="chart-wrap" style="height:220px;"><canvas id="chart-etss-month"></canvas></div>
       </div>
       <div class="card">
-        <div class="card-header"><span class="card-title">⏱️ ETSS SLA (Submit / Review)</span></div>
-        <div class="chart-wrap" style="height:220px;"><canvas id="chart-etss-sla"></canvas></div>
+        <div class="card-header"><span class="card-title">📊 ETSS Status by Region</span></div>
+        <div class="chart-wrap" style="height:260px;"><canvas id="chart-etss-sla"></canvas></div>
       </div>
     </div>
 
@@ -3941,13 +3941,20 @@ async function loadSurvey(qs) {
     backgroundColor: COLORS.yellow, borderRadius: 4
   }], { plugins: { legend: { display: false } } });
 
-  // SLA bars
-  const slaLabels = [...new Set([...Object.keys(svR.etss_submit_sla||{}), ...Object.keys(svR.etss_review_sla||{})])];
+  // ETSS Status stacked bar by Region
+  const etssRegions = (svR.survey_region || []);
+  const etssRegionLabels = etssRegions.map(r => r.region);
   destroyChart('chart-etss-sla');
-  makeBar('chart-etss-sla', slaLabels, [
-    { label: 'Submit SLA',  data: slaLabels.map(k=>(svR.etss_submit_sla||{})[k]||0), backgroundColor: COLORS.blue, borderRadius: 4 },
-    { label: 'Review SLA',  data: slaLabels.map(k=>(svR.etss_review_sla||{})[k]||0), backgroundColor: COLORS.orange, borderRadius: 4 },
-  ]);
+  makeBar('chart-etss-sla', etssRegionLabels, [
+    { label: 'Approved',  data: etssRegions.map(r => r.etss_approved || 0), backgroundColor: '#10b981', borderRadius: 0 },
+    { label: 'Submitted', data: etssRegions.map(r => Math.max(0,(r.etss_submit||0)-(r.etss_approved||0)-(r.etss_reject||0))), backgroundColor: '#3b82f6', borderRadius: 0 },
+    { label: 'Rejected',  data: etssRegions.map(r => r.etss_reject || 0),  backgroundColor: '#ef4444', borderRadius: 0 },
+    { label: 'Pending',   data: etssRegions.map(r => r.etss_pending || 0), backgroundColor: '#f59e0b', borderRadius: 0 },
+  ], {
+    plugins: { legend: { display: true, position: 'bottom', labels: { color: '#94a3b8', font: { size: 11 }, boxWidth: 12, padding: 10 } } },
+    xScale: { stacked: true },
+    yScale: { stacked: true }
+  });
 
   // Survey by Region Table
   const tbody1 = document.querySelector('#survey-region-table tbody');
