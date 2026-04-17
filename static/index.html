@@ -4691,6 +4691,7 @@ async function loadInstallation(qs) {
   const rtMonths  = instR.rollout_months_order  || [];
   const rtRegions = instR.rollout_regions_order || [];
   const rtMatrix  = instR.rollout_target_matrix || {};
+  const rtActual  = instR.rollout_actual_matrix || {};
 
   const REGION_COLORS = [
     '#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6',
@@ -4705,39 +4706,57 @@ async function loadInstallation(qs) {
       borderRadius: 0,
     }));
     makeBar('chart-rollout', rtMonths, rtDatasets, {
-      plugins: { legend: { display: true, position: 'bottom', labels: { color:'#94a3b8', font:{size:11}, boxWidth:12, padding:10 } } },
+      plugins: {
+        legend: { display: true, position: 'bottom', labels: { color:'#94a3b8', font:{size:11}, boxWidth:12, padding:10 } },
+        datalabels: {
+          display: ctx => ctx.dataset.data[ctx.dataIndex] > 0,
+          color: '#fff',
+          font: { size: 10, weight: 'bold' },
+          formatter: v => v > 0 ? v : ''
+        }
+      },
       xScale: { stacked: true },
       yScale: { stacked: true },
     });
 
-    // ── ตาราง ──
+    // ── ตาราง: Region | Jan Target | Jan Actual | ... | Total Target | Total Actual ──
     const thead = document.getElementById('tbl-rollout-head');
     const tbody = document.getElementById('tbl-rollout-body');
-    const thStyle = 'background:rgba(8,145,178,.25);color:#7dd3fc;font-size:11px;padding:6px 10px;text-align:center;border:1px solid rgba(255,255,255,.08);white-space:nowrap';
-    const tdStyle = 'padding:5px 10px;text-align:center;border:1px solid rgba(255,255,255,.06);font-size:12px;color:#e2e8f0';
-    const tdReg   = 'padding:5px 10px;text-align:left;border:1px solid rgba(255,255,255,.06);font-size:12px;color:#7dd3fc;font-weight:600;white-space:nowrap';
-    const tdTotal = 'padding:5px 10px;text-align:center;border:1px solid rgba(255,255,255,.06);font-size:12px;color:#f1f5f9;font-weight:700';
+    const th  = (txt, extra='') => `<th style="background:rgba(8,145,178,.25);color:#7dd3fc;font-size:11px;padding:6px 8px;text-align:center;border:1px solid rgba(255,255,255,.08);white-space:nowrap;${extra}">${txt}</th>`;
+    const td  = (txt, color='#cbd5e1') => `<td style="padding:5px 8px;text-align:center;border:1px solid rgba(255,255,255,.06);font-size:12px;color:${color}">${txt||'—'}</td>`;
+    const tdL = (txt, color='#7dd3fc') => `<td style="padding:5px 8px;text-align:left;border:1px solid rgba(255,255,255,.06);font-size:12px;color:${color};font-weight:600;white-space:nowrap">${txt}</td>`;
 
+    // header: Region | [Mon Target / Actual] x N | Total Target | Total Actual
     thead.innerHTML = `<tr>
-      <th style="${thStyle};text-align:left">Region</th>
-      ${rtMonths.map(m=>`<th style="${thStyle}">${m}</th>`).join('')}
-      <th style="${thStyle}">Total</th>
+      <th rowspan="2" style="background:rgba(8,145,178,.25);color:#7dd3fc;font-size:11px;padding:6px 8px;text-align:left;border:1px solid rgba(255,255,255,.08);white-space:nowrap">Region</th>
+      ${rtMonths.map(m=>`<th colspan="2" style="background:rgba(8,145,178,.25);color:#7dd3fc;font-size:11px;padding:6px 8px;text-align:center;border:1px solid rgba(255,255,255,.08)">${m}</th>`).join('')}
+      <th colspan="2" style="background:rgba(14,165,233,.35);color:#f1f5f9;font-size:11px;padding:6px 8px;text-align:center;border:1px solid rgba(255,255,255,.08)">Total</th>
+    </tr>
+    <tr>
+      ${rtMonths.map(()=>`${th('Target')}${th('Actual','color:#86efac')}`).join('')}
+      ${th('Target','background:rgba(14,165,233,.35);color:#f1f5f9')}${th('Actual','background:rgba(14,165,233,.35);color:#86efac')}
     </tr>`;
 
-    const grandTotal = new Array(rtMonths.length).fill(0);
+    const gTgt = new Array(rtMonths.length).fill(0);
+    const gAct = new Array(rtMonths.length).fill(0);
     tbody.innerHTML = rtRegions.map((reg, i) => {
-      const vals = rtMonths.map(m => (rtMatrix[m]||{})[reg] || 0);
-      vals.forEach((v,j) => grandTotal[j] += v);
-      const rowTotal = vals.reduce((a,b)=>a+b,0);
+      const tgts = rtMonths.map(m => (rtMatrix[m]||{})[reg] || 0);
+      const acts = rtMonths.map(m => (rtActual[m]||{})[reg] || 0);
+      tgts.forEach((v,j) => gTgt[j] += v);
+      acts.forEach((v,j) => gAct[j] += v);
+      const rowTgt = tgts.reduce((a,b)=>a+b,0);
+      const rowAct = acts.reduce((a,b)=>a+b,0);
+      const dot = `<span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${REGION_COLORS[i%REGION_COLORS.length]};margin-right:5px;vertical-align:middle"></span>`;
       return `<tr>
-        <td style="${tdReg}"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${REGION_COLORS[i%REGION_COLORS.length]};margin-right:6px;vertical-align:middle"></span>${reg}</td>
-        ${vals.map(v=>`<td style="${tdStyle}">${v||'—'}</td>`).join('')}
-        <td style="${tdTotal}">${rowTotal}</td>
+        ${tdL(`${dot}${reg}`)}
+        ${tgts.map((v,j)=>`${td(v||0)}${td(acts[j]||0,'#86efac')}`).join('')}
+        ${td(rowTgt,'#f1f5f9')}${td(rowAct,'#86efac')}
       </tr>`;
-    }).join('') + `<tr style="background:rgba(255,255,255,.05)">
-      <td style="${tdReg};color:#f1f5f9">Total</td>
-      ${grandTotal.map(v=>`<td style="${tdTotal}">${v}</td>`).join('')}
-      <td style="${tdTotal}">${grandTotal.reduce((a,b)=>a+b,0)}</td>
+    }).join('') + `<tr style="background:rgba(255,255,255,.06)">
+      ${tdL('Total','#f1f5f9')}
+      ${gTgt.map((v,j)=>`${td(v,'#f1f5f9')}${td(gAct[j],'#86efac')}`).join('')}
+      <td style="padding:5px 8px;text-align:center;border:1px solid rgba(255,255,255,.06);font-size:12px;color:#f1f5f9;font-weight:700">${gTgt.reduce((a,b)=>a+b,0)}</td>
+      <td style="padding:5px 8px;text-align:center;border:1px solid rgba(255,255,255,.06);font-size:12px;color:#86efac;font-weight:700">${gAct.reduce((a,b)=>a+b,0)}</td>
     </tr>`;
   } else {
     // fallback doughnut ถ้าไม่มี matrix
