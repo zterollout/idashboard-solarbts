@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login – ZTE-AIS Gulf Solar BTS Dashboard</title>
+  <style>
+    /* ── Reset & Base ─────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f4c75 100%);
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* ── Animated background particles ──────────────────────── */
+    .bg-particles {
+      position: absolute; inset: 0; overflow: hidden; pointer-events: none;
+    }
+    .particle {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.04);
+      animation: float linear infinite;
+    }
+    @keyframes float {
+      0%   { transform: translateY(110vh) scale(0); opacity: 0; }
+      10%  { opacity: 1; }
+      90%  { opacity: 1; }
+      100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+    }
+
+    /* ── Card ────────────────────────────────────────────────── */
+    .login-card {
+      position: relative;
+      width: 420px;
+      background: rgba(255,255,255,0.05);
+      -webkit-backdrop-filter: blur(20px);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 20px;
+      padding: 40px 44px 44px;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.5);
+      animation: cardIn .5s cubic-bezier(.22,.68,0,1.2) both;
+    }
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(30px) scale(.97); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* ── Logo / Header ───────────────────────────────────────── */
+    .logo-wrap {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .logo-img-wrap {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 191, 254, 0.08);
+      border: 1px solid rgba(0, 191, 254, 0.2);
+      border-radius: 14px;
+      padding: 10px 22px;
+      margin-bottom: 14px;
+    }
+    .logo-img-wrap img {
+      width: 140px;
+      height: auto;
+      /* logo สีฟ้า (#00bffe) บนพื้นมืด — เพิ่ม brightness + กัน glow ขาว */
+      filter: brightness(1.1) drop-shadow(0 0 8px rgba(0, 191, 254, 0.5));
+      display: block;
+    }
+    .app-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #f1f5f9;
+      letter-spacing: .3px;
+    }
+    .app-sub {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-top: 4px;
+    }
+
+    /* ── Form ────────────────────────────────────────────────── */
+    .form-group {
+      margin-bottom: 18px;
+    }
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #cbd5e1;
+      margin-bottom: 8px;
+      letter-spacing: .3px;
+    }
+    .input-wrap {
+      position: relative;
+    }
+    .input-wrap .icon {
+      position: absolute;
+      left: 14px; top: 50%;
+      transform: translateY(-50%);
+      font-size: 16px;
+      color: #64748b;
+      pointer-events: none;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 12px 14px 12px 42px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 10px;
+      color: #f1f5f9;
+      font-size: 15px;
+      outline: none;
+      transition: border-color .2s, background .2s, box-shadow .2s;
+    }
+    .form-group input::placeholder { color: #475569; }
+    .form-group input:focus {
+      border-color: #3b82f6;
+      background: rgba(59,130,246,0.08);
+      box-shadow: 0 0 0 3px rgba(59,130,246,.18);
+    }
+    /* show/hide password toggle */
+    .toggle-pw {
+      position: absolute;
+      right: 12px; top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      color: #64748b;
+      font-size: 16px;
+      -webkit-user-select: none;
+      user-select: none;
+      transition: color .2s;
+    }
+    .toggle-pw:hover { color: #94a3b8; }
+
+    /* ── Error message ───────────────────────────────────────── */
+    .error-msg {
+      display: none;
+      background: rgba(239,68,68,.15);
+      border: 1px solid rgba(239,68,68,.35);
+      color: #fca5a5;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      align-items: center;
+      gap: 8px;
+    }
+    .error-msg.show { display: flex; }
+
+    /* ── Button ──────────────────────────────────────────────── */
+    .btn-login {
+      width: 100%;
+      padding: 13px;
+      background: linear-gradient(135deg, #3b82f6, #06b6d4);
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: .5px;
+      transition: opacity .2s, transform .1s, box-shadow .2s;
+      box-shadow: 0 6px 20px rgba(59,130,246,.35);
+      margin-top: 6px;
+    }
+    .btn-login:hover  { opacity: .92; box-shadow: 0 8px 28px rgba(59,130,246,.45); }
+    .btn-login:active { transform: scale(.98); }
+    .btn-login:disabled { opacity: .6; cursor: not-allowed; }
+
+    /* spinner inside button */
+    .btn-login .spinner {
+      display: none;
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .6s linear infinite;
+      margin: 0 auto;
+    }
+    .btn-login.loading .btn-text { display: none; }
+    .btn-login.loading .spinner { display: block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Footer ──────────────────────────────────────────────── */
+    .card-footer {
+      text-align: center;
+      margin-top: 22px;
+      font-size: 12px;
+      color: #475569;
+    }
+    .card-footer span { color: #64748b; }
+
+    /* ── Shake animation on wrong password ───────────────────── */
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20%,60% { transform: translateX(-8px); }
+      40%,80% { transform: translateX(8px); }
+    }
+    .shake { animation: shake .4s ease; }
+  </style>
+</head>
+<body>
+
+  <!-- Background particles -->
+  <div class="bg-particles" id="bgParticles"></div>
+
+  <!-- Login Card -->
+  <div class="login-card" id="loginCard">
+
+    <div class="logo-wrap">
+      <div class="logo-img-wrap">
+        <img src="/static/ZTE-logo.png" alt="ZTE Logo" />
+      </div>
+      <div class="app-title">Solar BTS Dashboard</div>
+      <div class="app-sub">AIS-Gulf &nbsp;·&nbsp; 2025 Overall Progress</div>
+    </div>
+
+    <!-- Error -->
+    <div class="error-msg" id="errorMsg">
+      <span>⚠️</span>
+      <span id="errorText">Invalid username or password</span>
+    </div>
+
+    <!-- Form -->
+    <form id="loginForm" autocomplete="off">
+      <div class="form-group">
+        <label for="username">Username</label>
+        <div class="input-wrap">
+          <span class="icon">👤</span>
+          <input id="username" type="text" placeholder="Enter username"
+                 autocomplete="username" required />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <div class="input-wrap">
+          <span class="icon">🔒</span>
+          <input id="password" type="password" placeholder="Enter password"
+                 autocomplete="current-password" required />
+          <span class="toggle-pw" id="togglePw" title="Show/Hide password">👁️</span>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-login" id="btnLogin">
+        <span class="btn-text">Sign In</span>
+        <div class="spinner"></div>
+      </button>
+    </form>
+
+    <div class="card-footer">
+      <span>Session expires after 8 hours</span>
+    </div>
+  </div>
+
+  <script>
+    // ── Background particles ────────────────────────────────────
+    (function() {
+      const container = document.getElementById('bgParticles');
+      const sizes = [30,50,70,100,140,180];
+      for (let i = 0; i < 18; i++) {
+        const el = document.createElement('div');
+        el.className = 'particle';
+        const s = sizes[Math.floor(Math.random() * sizes.length)];
+        el.style.cssText = `
+          width:${s}px; height:${s}px;
+          left:${Math.random()*100}%;
+          animation-duration:${12+Math.random()*20}s;
+          animation-delay:${-Math.random()*20}s;
+        `;
+        container.appendChild(el);
+      }
+    })();
+
+    // ── Toggle password visibility ──────────────────────────────
+    document.getElementById('togglePw').addEventListener('click', function() {
+      const inp = document.getElementById('password');
+      const isText = inp.type === 'text';
+      inp.type = isText ? 'password' : 'text';
+      this.textContent = isText ? '👁️' : '🙈';
+    });
+
+    // ── Login form submit ───────────────────────────────────────
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const btn     = document.getElementById('btnLogin');
+      const errDiv  = document.getElementById('errorMsg');
+      const errText = document.getElementById('errorText');
+      const card    = document.getElementById('loginCard');
+
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value.trim();
+
+      // hide old error
+      errDiv.classList.remove('show');
+      btn.classList.add('loading');
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ username, password }),
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.ok) {
+          // Success → redirect to dashboard
+          btn.querySelector('.btn-text') && (btn.innerHTML = '✅ Signed in! Redirecting…');
+          setTimeout(() => { window.location.href = '/'; }, 500);
+        } else {
+          // Wrong credentials
+          errText.textContent = data.detail || 'Invalid username or password';
+          errDiv.classList.add('show');
+          card.classList.add('shake');
+          card.addEventListener('animationend', () => card.classList.remove('shake'), { once: true });
+          btn.classList.remove('loading');
+          btn.disabled = false;
+        }
+      } catch (err) {
+        errText.textContent = 'Cannot connect to server. Please try again.';
+        errDiv.classList.add('show');
+        btn.classList.remove('loading');
+        btn.disabled = false;
+      }
+    });
+
+    // ── If already logged in, go straight to dashboard ─────────
+    fetch('/api/me', { credentials: 'include' })
+      .then(r => { if (r.ok) window.location.href = '/'; })
+      .catch(() => {});
+  </script>
+</body>
+</html>

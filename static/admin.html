@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Admin – User Management</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: #0f172a;
+  color: #e2e8f0;
+  min-height: 100vh;
+}
+
+/* ── Header ── */
+header {
+  background: linear-gradient(120deg, #0284c7 0%, #0891b2 40%, #0d9488 70%, #059669 100%);
+  padding: 0 28px;
+  height: 58px;
+  display: flex; align-items: center; justify-content: space-between;
+  box-shadow: 0 3px 18px rgba(8,145,178,0.35);
+  position: relative;
+}
+header::after {
+  content: '';
+  position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, rgba(255,255,255,.6), rgba(255,255,255,.1), rgba(255,255,255,.6));
+}
+.hdr-left { display: flex; align-items: center; gap: 14px; }
+.hdr-left img { height: 32px; filter: brightness(1.1) drop-shadow(0 0 6px rgba(0,191,254,.5)); }
+.hdr-left h1 { font-size: 17px; font-weight: 700; color: #fff; letter-spacing: .3px; }
+.hdr-left h1 span { font-size: 12px; font-weight: 400; color: rgba(255,255,255,.7); margin-left: 8px; }
+.hdr-right { display: flex; align-items: center; gap: 12px; }
+.badge-user {
+  background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.25);
+  border-radius: 20px; padding: 4px 14px; font-size: 13px; color: #fff;
+  display: flex; align-items: center; gap: 6px;
+}
+.btn-nav {
+  background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2);
+  color: #fff; border-radius: 8px; padding: 6px 16px; font-size: 13px;
+  cursor: pointer; transition: background .2s; text-decoration: none;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.btn-nav:hover { background: rgba(255,255,255,.22); }
+
+/* ── Main layout ── */
+main {
+  max-width: 960px;
+  margin: 40px auto;
+  padding: 0 20px;
+}
+
+/* ── Page title ── */
+.page-title {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 28px;
+}
+.page-title h2 {
+  font-size: 22px; font-weight: 700; color: #f1f5f9;
+  display: flex; align-items: center; gap: 10px;
+}
+.page-title h2 .icon { font-size: 26px; }
+
+/* ── Card ── */
+.card {
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0,0,0,.4);
+}
+.card-header {
+  padding: 18px 24px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  display: flex; align-items: center; justify-content: space-between;
+  background: rgba(255,255,255,.03);
+}
+.card-header h3 { font-size: 15px; font-weight: 600; color: #cbd5e1; }
+
+/* ── Table ── */
+.tbl-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+thead th {
+  background: rgba(8,145,178,.25);
+  color: #7dd3fc;
+  font-size: 12px; font-weight: 600; letter-spacing: .6px; text-transform: uppercase;
+  padding: 12px 20px; text-align: left;
+}
+tbody tr { border-bottom: 1px solid rgba(255,255,255,.06); transition: background .15s; }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: rgba(255,255,255,.04); }
+tbody td { padding: 13px 20px; font-size: 14px; color: #e2e8f0; vertical-align: middle; }
+
+/* ── Badges ── */
+.role-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;
+}
+.role-admin   { background: rgba(124,58,237,.25); color: #c4b5fd; border: 1px solid rgba(124,58,237,.4); }
+.role-member  { background: rgba(8,145,178,.2);   color: #7dd3fc;  border: 1px solid rgba(8,145,178,.35); }
+.role-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+/* ── Action buttons in table ── */
+.btn-edit, .btn-del {
+  border: none; border-radius: 7px; padding: 5px 13px;
+  font-size: 12px; font-weight: 500; cursor: pointer; transition: all .2s;
+  display: inline-flex; align-items: center; gap: 5px;
+}
+.btn-edit { background: rgba(8,145,178,.2); color: #7dd3fc; border: 1px solid rgba(8,145,178,.3); }
+.btn-edit:hover { background: rgba(8,145,178,.35); }
+.btn-del  { background: rgba(225,29,72,.15); color: #fda4af; border: 1px solid rgba(225,29,72,.3); margin-left: 6px; }
+.btn-del:hover  { background: rgba(225,29,72,.3); }
+.btn-del:disabled { opacity: .3; cursor: not-allowed; }
+
+/* ── Primary button ── */
+.btn-primary {
+  background: linear-gradient(135deg, #0891b2, #059669);
+  color: #fff; border: none; border-radius: 10px;
+  padding: 10px 22px; font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: opacity .2s; display: flex; align-items: center; gap: 8px;
+}
+.btn-primary:hover { opacity: .88; }
+
+/* ── Stats row ── */
+.stats-row {
+  display: grid; grid-template-columns: repeat(3,1fr); gap: 16px;
+  margin-bottom: 28px;
+}
+.stat-card {
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 14px; padding: 20px 24px;
+  display: flex; align-items: center; gap: 16px;
+}
+.stat-icon { font-size: 30px; }
+.stat-val { font-size: 26px; font-weight: 700; color: #f1f5f9; line-height: 1; }
+.stat-lbl { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+
+/* ── Modal overlay ── */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.65);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 999; opacity: 0; pointer-events: none; transition: opacity .2s;
+}
+.modal-overlay.active { opacity: 1; pointer-events: all; }
+
+.modal {
+  background: #1e293b;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 18px;
+  padding: 32px 36px;
+  width: 440px;
+  max-width: 95vw;
+  transform: translateY(20px) scale(.97);
+  transition: transform .25s cubic-bezier(.22,.68,0,1.2);
+  box-shadow: 0 24px 64px rgba(0,0,0,.6);
+}
+.modal-overlay.active .modal { transform: none; }
+
+.modal h3 { font-size: 18px; font-weight: 700; color: #f1f5f9; margin-bottom: 24px; display: flex; align-items: center; gap: 10px; }
+
+/* ── Form ── */
+.form-group { margin-bottom: 18px; }
+.form-group label { display: block; font-size: 12px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 7px; }
+.form-group input, .form-group select {
+  width: 100%;
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 14px; color: #f1f5f9;
+  outline: none; transition: border-color .2s;
+}
+.form-group input:focus, .form-group select:focus {
+  border-color: #0891b2;
+  box-shadow: 0 0 0 3px rgba(8,145,178,.2);
+}
+.form-group select option { background: #1e293b; }
+.form-hint { font-size: 11px; color: #64748b; margin-top: 5px; }
+
+.modal-btns { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
+.btn-cancel {
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12);
+  color: #94a3b8; border-radius: 10px; padding: 9px 20px; font-size: 14px;
+  cursor: pointer; transition: background .2s;
+}
+.btn-cancel:hover { background: rgba(255,255,255,.12); }
+.btn-save {
+  background: linear-gradient(135deg, #0891b2, #059669);
+  color: #fff; border: none; border-radius: 10px;
+  padding: 9px 22px; font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: opacity .2s;
+}
+.btn-save:hover { opacity: .88; }
+
+/* ── Toast ── */
+.toast-container { position: fixed; bottom: 28px; right: 28px; z-index: 1000; display: flex; flex-direction: column; gap: 10px; }
+.toast {
+  background: #1e293b; border: 1px solid rgba(255,255,255,.12);
+  border-radius: 12px; padding: 12px 20px;
+  display: flex; align-items: center; gap: 10px;
+  font-size: 14px; color: #e2e8f0;
+  box-shadow: 0 8px 32px rgba(0,0,0,.4);
+  transform: translateX(120%); transition: transform .3s cubic-bezier(.22,.68,0,1.2);
+  min-width: 260px;
+}
+.toast.show { transform: translateX(0); }
+.toast.success { border-left: 4px solid #059669; }
+.toast.error   { border-left: 4px solid #e11d48; }
+.toast-icon { font-size: 20px; }
+
+/* ── Loading spinner ── */
+.spinner {
+  display: inline-block; width: 18px; height: 18px;
+  border: 2px solid rgba(255,255,255,.2); border-top-color: #7dd3fc;
+  border-radius: 50%; animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Empty state ── */
+.empty { text-align: center; padding: 60px 20px; color: #475569; }
+.empty .empty-icon { font-size: 48px; margin-bottom: 12px; }
+
+/* ── Search ── */
+.search-wrap { position: relative; }
+.search-wrap input {
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 9px; padding: 7px 14px 7px 36px;
+  font-size: 13px; color: #e2e8f0; outline: none; width: 220px;
+  transition: border-color .2s;
+}
+.search-wrap input:focus { border-color: #0891b2; }
+.search-wrap .search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: #64748b; font-size: 14px; pointer-events: none; }
+
+/* ── Password visibility toggle ── */
+.pw-wrap { position: relative; }
+.pw-wrap input { padding-right: 40px; }
+.pw-toggle { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #64748b; font-size: 16px; padding: 0; line-height: 1; }
+.pw-toggle:hover { color: #94a3b8; }
+</style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<header>
+  <div class="hdr-left">
+    <img src="/static/ZTE-logo.png" alt="ZTE Logo"/>
+    <h1>ZTE-AIS Gulf Solar BTS <span>Admin Panel</span></h1>
+  </div>
+  <div class="hdr-right">
+    <div class="badge-user">
+      <span>👤</span>
+      <span id="admin-name">Loading…</span>
+      <span style="opacity:.5;font-size:11px;">Admin</span>
+    </div>
+    <a href="/" class="btn-nav">⬅ Dashboard</a>
+    <button class="btn-nav" onclick="doLogout()">🚪 Logout</button>
+  </div>
+</header>
+
+<!-- ── Main ── -->
+<main>
+  <div class="page-title">
+    <h2><span class="icon">🛡️</span> User Management</h2>
+    <button class="btn-primary" onclick="openCreateModal()">
+      <span>➕</span> Add User
+    </button>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon">👥</div>
+      <div>
+        <div class="stat-val" id="stat-total">—</div>
+        <div class="stat-lbl">Total Users</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🛡️</div>
+      <div>
+        <div class="stat-val" id="stat-admins">—</div>
+        <div class="stat-lbl">Admins</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">👤</div>
+      <div>
+        <div class="stat-val" id="stat-members">—</div>
+        <div class="stat-lbl">Members</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- User Table Card -->
+  <div class="card">
+    <div class="card-header">
+      <h3>All Users</h3>
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="search-input" placeholder="Search username…" oninput="renderTable()"/>
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <table id="user-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Username</th>
+            <th>Role</th>
+            <th style="text-align:right">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="tbl-body">
+          <tr><td colspan="4" style="text-align:center;padding:40px;color:#475569">
+            <span class="spinner"></span>
+          </td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<!-- ══ Create / Edit Modal ══ -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal" id="modal-box">
+    <h3 id="modal-title">➕ Add New User</h3>
+
+    <div class="form-group">
+      <label>Username</label>
+      <input type="text" id="f-username" placeholder="e.g. john.doe" autocomplete="off"/>
+    </div>
+
+    <div class="form-group">
+      <label>Password</label>
+      <div class="pw-wrap">
+        <input type="password" id="f-password" placeholder="Enter password" autocomplete="new-password"/>
+        <button class="pw-toggle" onclick="togglePw('f-password', this)">👁</button>
+      </div>
+      <div class="form-hint" id="pw-hint">Leave blank to keep current password (edit mode)</div>
+    </div>
+
+    <div class="form-group">
+      <label>Role</label>
+      <select id="f-role">
+        <option value="Member">👤 Member</option>
+        <option value="Admin">🛡️ Admin</option>
+      </select>
+    </div>
+
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" id="btn-save" onclick="saveUser()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Delete Confirm Modal ══ -->
+<div class="modal-overlay" id="del-overlay" onclick="closeDelModal(event)">
+  <div class="modal" id="del-box">
+    <h3>🗑️ Delete User</h3>
+    <p style="color:#94a3b8;font-size:14px;margin-bottom:8px">
+      Are you sure you want to delete user <strong id="del-username" style="color:#fda4af"></strong>?
+    </p>
+    <p style="color:#64748b;font-size:13px">This action cannot be undone.</p>
+    <div class="modal-btns" style="margin-top:28px">
+      <button class="btn-cancel" onclick="closeDelModal()">Cancel</button>
+      <button class="btn-save" style="background:linear-gradient(135deg,#be123c,#9f1239)" id="btn-confirm-del" onclick="confirmDelete()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Toast container ── -->
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+let _users = [];
+let _editMode = false;
+let _editUsername = null;
+let _deleteTarget = null;
+let _me = null;
+
+// ── Init ────────────────────────────────────────────────────────
+async function init() {
+  // Check auth + admin
+  try {
+    const r = await fetch('/api/me', { credentials: 'include' });
+    if (!r.ok) { location.href = '/static/login.html'; return; }
+    _me = await r.json();
+    if (_me.role.toLowerCase() !== 'admin') {
+      location.href = '/';
+      return;
+    }
+    document.getElementById('admin-name').textContent = _me.user;
+  } catch {
+    location.href = '/static/login.html';
+    return;
+  }
+  await loadUsers();
+}
+
+async function loadUsers() {
+  try {
+    const r = await fetch('/api/admin/users', { credentials: 'include' });
+    if (!r.ok) throw new Error(await r.text());
+    _users = await r.json();
+    updateStats();
+    renderTable();
+  } catch (e) {
+    showToast('Failed to load users: ' + e.message, 'error');
+  }
+}
+
+// ── Stats ───────────────────────────────────────────────────────
+function updateStats() {
+  document.getElementById('stat-total').textContent   = _users.length;
+  document.getElementById('stat-admins').textContent  = _users.filter(u => u.role === 'Admin').length;
+  document.getElementById('stat-members').textContent = _users.filter(u => u.role === 'Member').length;
+}
+
+// ── Table ───────────────────────────────────────────────────────
+function renderTable() {
+  const q = (document.getElementById('search-input').value || '').toLowerCase();
+  const filtered = _users.filter(u => u.username.toLowerCase().includes(q));
+  const tbody = document.getElementById('tbl-body');
+
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="4">
+      <div class="empty"><div class="empty-icon">🔍</div>No users found</div>
+    </td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map((u, i) => {
+    const isSelf = _me && u.username.toLowerCase() === _me.user.toLowerCase();
+    const roleCls = u.role === 'Admin' ? 'role-admin' : 'role-member';
+    const roleIcon = u.role === 'Admin' ? '🛡️' : '👤';
+    return `
+      <tr>
+        <td style="color:#475569;font-size:13px">${i + 1}</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#0891b2,#059669);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;flex-shrink:0">
+              ${u.username[0].toUpperCase()}
+            </div>
+            <div>
+              <div style="font-weight:500">${escHtml(u.username)}</div>
+              ${isSelf ? '<div style="font-size:11px;color:#7dd3fc">(You)</div>' : ''}
+            </div>
+          </div>
+        </td>
+        <td>
+          <span class="role-badge ${roleCls}">
+            <span class="role-dot"></span>${roleIcon} ${u.role}
+          </span>
+        </td>
+        <td style="text-align:right">
+          <button class="btn-edit" onclick="openEditModal('${escHtml(u.username)}', '${u.role}')">
+            ✏️ Edit
+          </button>
+          <button class="btn-del" onclick="openDeleteModal('${escHtml(u.username)}')"
+            ${isSelf ? 'disabled title="Cannot delete yourself"' : ''}>
+            🗑️ Delete
+          </button>
+        </td>
+      </tr>`;
+  }).join('');
+}
+
+// ── Modals ──────────────────────────────────────────────────────
+function openCreateModal() {
+  _editMode = false; _editUsername = null;
+  document.getElementById('modal-title').textContent = '➕ Add New User';
+  document.getElementById('f-username').value = '';
+  document.getElementById('f-username').disabled = false;
+  document.getElementById('f-password').value = '';
+  document.getElementById('f-role').value = 'Member';
+  document.getElementById('pw-hint').textContent = '';
+  document.getElementById('modal-overlay').classList.add('active');
+  setTimeout(() => document.getElementById('f-username').focus(), 150);
+}
+
+function openEditModal(username, role) {
+  _editMode = true; _editUsername = username;
+  document.getElementById('modal-title').textContent = '✏️ Edit User';
+  document.getElementById('f-username').value = username;
+  document.getElementById('f-username').disabled = true;
+  document.getElementById('f-password').value = '';
+  document.getElementById('f-role').value = role;
+  document.getElementById('pw-hint').textContent = 'Leave blank to keep current password';
+  document.getElementById('modal-overlay').classList.add('active');
+  setTimeout(() => document.getElementById('f-password').focus(), 150);
+}
+
+function closeModal(e) {
+  if (e && e.target !== document.getElementById('modal-overlay')) return;
+  document.getElementById('modal-overlay').classList.remove('active');
+}
+
+function openDeleteModal(username) {
+  _deleteTarget = username;
+  document.getElementById('del-username').textContent = username;
+  document.getElementById('del-overlay').classList.add('active');
+}
+
+function closeDelModal(e) {
+  if (e && e.target !== document.getElementById('del-overlay')) return;
+  document.getElementById('del-overlay').classList.remove('active');
+  _deleteTarget = null;
+}
+
+// ── Save (Create / Edit) ────────────────────────────────────────
+async function saveUser() {
+  const username = document.getElementById('f-username').value.trim();
+  const password = document.getElementById('f-password').value.trim();
+  const role     = document.getElementById('f-role').value;
+
+  if (!_editMode && !username) { showToast('Username is required', 'error'); return; }
+  if (!_editMode && !password) { showToast('Password is required', 'error'); return; }
+
+  const btn = document.getElementById('btn-save');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Saving…';
+
+  try {
+    let r;
+    if (_editMode) {
+      const body = { role };
+      if (password) body.password = password;
+      r = await fetch(`/api/admin/users/${encodeURIComponent(_editUsername)}`, {
+        method: 'PUT', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+    } else {
+      r = await fetch('/api/admin/users', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password, role }),
+      });
+    }
+
+    if (!r.ok) {
+      const err = await r.json();
+      throw new Error(err.detail || r.statusText);
+    }
+
+    showToast(_editMode ? `User "${_editUsername}" updated` : `User "${username}" created`, 'success');
+    document.getElementById('modal-overlay').classList.remove('active');
+    await loadUsers();
+  } catch (e) {
+    showToast('Error: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Save';
+  }
+}
+
+// ── Delete ──────────────────────────────────────────────────────
+async function confirmDelete() {
+  if (!_deleteTarget) return;
+  const btn = document.getElementById('btn-confirm-del');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>';
+
+  try {
+    const r = await fetch(`/api/admin/users/${encodeURIComponent(_deleteTarget)}`, {
+      method: 'DELETE', credentials: 'include',
+    });
+    if (!r.ok) {
+      const err = await r.json();
+      throw new Error(err.detail || r.statusText);
+    }
+    showToast(`User "${_deleteTarget}" deleted`, 'success');
+    document.getElementById('del-overlay').classList.remove('active');
+    _deleteTarget = null;
+    await loadUsers();
+  } catch (e) {
+    showToast('Error: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Delete';
+  }
+}
+
+// ── Logout ──────────────────────────────────────────────────────
+async function doLogout() {
+  await fetch('/api/logout', { method: 'POST', credentials: 'include' });
+  location.href = '/static/login.html';
+}
+
+// ── Password toggle ─────────────────────────────────────────────
+function togglePw(id, btn) {
+  const inp = document.getElementById(id);
+  if (inp.type === 'password') { inp.type = 'text'; btn.textContent = '🙈'; }
+  else { inp.type = 'password'; btn.textContent = '👁'; }
+}
+
+// ── Toast ────────────────────────────────────────────────────────
+function showToast(msg, type = 'success') {
+  const container = document.getElementById('toast-container');
+  const div = document.createElement('div');
+  div.className = `toast ${type}`;
+  div.innerHTML = `<span class="toast-icon">${type === 'success' ? '✅' : '❌'}</span><span>${msg}</span>`;
+  container.appendChild(div);
+  requestAnimationFrame(() => { requestAnimationFrame(() => div.classList.add('show')); });
+  setTimeout(() => {
+    div.classList.remove('show');
+    setTimeout(() => div.remove(), 350);
+  }, 3500);
+}
+
+// ── Keyboard shortcuts ───────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.getElementById('modal-overlay').classList.remove('active');
+    document.getElementById('del-overlay').classList.remove('active');
+  }
+  if (e.key === 'Enter' && document.getElementById('modal-overlay').classList.contains('active')) {
+    saveUser();
+  }
+});
+
+// ── Utils ────────────────────────────────────────────────────────
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Start ────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
