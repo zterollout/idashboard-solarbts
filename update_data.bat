@@ -23,19 +23,20 @@ if not exist "ZTE-AIS-Gulf Solar BTS 2025 Overall Progress.xlsx" (
 echo [OK] พบไฟล์ Excel
 echo.
 
-:: ── Git add ไฟล์ Excel + UserLogin ─────────────────
-git add "ZTE-AIS-Gulf Solar BTS 2025 Overall Progress.xlsx"
-git add "UserLogin.xlsx"
-
-:: ── เช็คว่ามีการเปลี่ยนแปลงจริงไหม ─────────────────
-git diff --cached --quiet
-if %errorlevel%==0 (
+:: ── เช็คการเปลี่ยนแปลงก่อน add ─────────────────────
+git status --porcelain "ZTE-AIS-Gulf Solar BTS 2025 Overall Progress.xlsx" "UserLogin.xlsx" > "%TEMP%\git_chk.txt"
+for %%A in ("%TEMP%\git_chk.txt") do set CHKSIZE=%%~zA
+if "%CHKSIZE%"=="0" (
     echo [INFO] ไม่มีการเปลี่ยนแปลง (Excel + UserLogin)
     echo        ไม่ต้อง push
     echo.
     pause
     exit /b 0
 )
+
+:: ── Git add ไฟล์ Excel + UserLogin ─────────────────
+git add "ZTE-AIS-Gulf Solar BTS 2025 Overall Progress.xlsx"
+git add "UserLogin.xlsx"
 
 :: ── แสดงขนาดไฟล์ ────────────────────────────────────
 for %%F in ("ZTE-AIS-Gulf Solar BTS 2025 Overall Progress.xlsx") do (
